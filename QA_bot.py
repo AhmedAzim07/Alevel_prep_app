@@ -5,8 +5,7 @@ def main():
     st.title('A-level Quiz Bot')
     st.subheader("Enter a topic and I'll ask you questions!")
     
-    read_api_key= st.secrets["API_KEY_ST"]
-    # Text input for the question
+    read_api_key = st.secrets["API_KEY_ST"]
     topic = st.text_input('Enter the topic:')
 
     if 'questions' not in st.session_state:
@@ -36,10 +35,13 @@ def main():
             """}]
         )
 
+        # Debugging: print the response object
+        st.write(response)
+
         # Extract questions and answers from the response
         st.session_state.questions = ""
         st.session_state.expected_answers = []
-        response_text = response.choices[0].message['content']  # Accessing the response correctly now
+        response_text = response['choices'][0]['message']['content']  # Modify this line as needed based on the response structure
         lines = response_text.split('\n')
         for line in lines:
             if line.strip().endswith('?'):
@@ -96,7 +98,7 @@ def main():
                     ]
                 )
                 # Extract the model's response
-                is_correct = response.choices[0].message['content'].strip()
+                is_correct = response['choices'][0]['message']['content'].strip()
                 
                 st.write(f"Question {i+1}: Your answer - {student_answer}")
                 st.write(f"Correct Answer: {correct_answer}")
