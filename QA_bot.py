@@ -7,11 +7,12 @@ import streamlit as st
 def main():
     st.title('Alevel Prep App')
     
+    read_api_key= st.secrets["API_KEY_ST"]
     # Text input for the question
     question = st.text_input('Enter your question:')
 
     if st.button('Enter'):
-        client = OpenAI(api_key="")
+        client = OpenAI(api_key=read_api_key)
         stream = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content":
