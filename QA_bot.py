@@ -46,11 +46,23 @@ def main():
         
         # Check answers
         if st.button('Check Answers'):
-            # Your checking logic here (example: compare student_answers with expected answers)
+            # Display checking results
             st.subheader("Answer Checking Results:")
-            for i, answer in enumerate(student_answers):
-                st.write(f"Question {i+1}: Your answer - {answer}")
-                # Your logic to compare answers can go here
+            for i, student_answer in enumerate(student_answers):
+                # Use the model to check the similarity between student answers and expected answers
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": "You are an A-level professor."},
+                        {"role": "user", "content": f"Question: {final_questions.split('?')[i]}? Answer: {expected_answers[i]}"},
+                        {"role": "user", "content": f"Is the student's answer '{student_answer}' correct or similar to the expected answer? Answer with 'Yes' or 'No'."}
+                    ]
+                )
+                # Extract the model's response
+                is_correct = response.choices[0].message["content"].strip()
+                
+                st.write(f"Question {i+1}: Your answer - {student_answer}")
+                st.write(f"Is the answer correct? {is_correct}")
 
 if __name__ == "__main__":
     main()
