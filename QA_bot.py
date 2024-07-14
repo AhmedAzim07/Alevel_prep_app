@@ -5,7 +5,8 @@ from openai import OpenAI
 import streamlit as st
 
 def main():
-    st.title('Alevel Prep App')
+    st.title('A-level Quiz Bot')
+    st.subheader("Enter a topic and I'll ask you questions!")
     
     read_api_key= st.secrets["API_KEY_ST"]
     # Text input for the question
