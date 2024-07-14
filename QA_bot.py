@@ -38,22 +38,26 @@ def main():
         # Debugging: print the response object
         st.write(response)
 
-        # Extract questions and answers from the response
-        st.session_state.questions = ""
-        st.session_state.expected_answers = []
-        response_text = response['choices'][0]['message']['content']  # Modify this line as needed based on the response structure
-        lines = response_text.split('\n')
-        for line in lines:
-            if line.strip().endswith('?'):
-                st.session_state.questions += line.strip() + '\n'
-            elif line.strip().startswith('Answer:'):
-                st.session_state.expected_answers.append(line.split('Answer:')[-1].strip())
-        st.session_state.current_question = 0
-        st.session_state.student_answers = {}
-        st.session_state.score = 0
+        try:
+            # Extract questions and answers from the response
+            st.session_state.questions = ""
+            st.session_state.expected_answers = []
+            response_text = response['choices'][0].message['content']  # Accessing the response correctly now
+            lines = response_text.split('\n')
+            for line in lines:
+                if line.strip().endswith('?'):
+                    st.session_state.questions += line.strip() + '\n'
+                elif line.strip().startswith('Correct answer:'):
+                    st.session_state.expected_answers.append(line.split('Correct answer:')[-1].strip())
+            st.session_state.current_question = 0
+            st.session_state.student_answers = {}
+            st.session_state.score = 0
 
-    # Display the generated questions
-    st.text_area('Questions Generated:', st.session_state.questions, height=300)
+            # Display the generated questions
+            st.text_area('Questions Generated:', st.session_state.questions, height=300)
+
+        except Exception as e:
+            st.write(f"Error accessing response content: {e}")
 
     # Allow students to answer questions
     st.subheader("Answer the questions:")
@@ -98,7 +102,7 @@ def main():
                     ]
                 )
                 # Extract the model's response
-                is_correct = response['choices'][0]['message']['content'].strip()
+                is_correct = response['choices'][0].message['content'].strip()
                 
                 st.write(f"Question {i+1}: Your answer - {student_answer}")
                 st.write(f"Correct Answer: {correct_answer}")
