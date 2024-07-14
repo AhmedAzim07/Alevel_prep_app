@@ -35,7 +35,9 @@ def main():
             {st.session_state.topic}                       
             """}]
         )
-
+        
+        # Debugging: print the response object
+        st.write(response)
         # Extract questions and answers from the response
         st.session_state.questions = ""
         st.session_state.expected_answers = []
