@@ -9,7 +9,7 @@ def main():
     
     read_api_key= st.secrets["API_KEY_ST"]
     # Text input for the question
-    question = st.text_input('Enter your question:')
+    topic = st.text_input('Enter the topic:')
 
     if st.button('Enter'):
         client = OpenAI(api_key=read_api_key)
@@ -17,10 +17,11 @@ def main():
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content":
         f"""
-        You are an A-levels professor. Students will give you a topic. Your job is to come up with A-level questions
-        that are based on this topic.
-        Here is the question: 
-        {question}           
+        You are an A-level professor. Students will give you a topic. Your job is to come up with A-level questions
+        that are based on this topic. The difficulty of these questions should be per the skill level of an average
+        A-level student. Ask 5-10 questions
+        Here is the topic: 
+        {topic}           
                    
         """           
                     }],
@@ -34,7 +35,7 @@ def main():
 
 
         # Display the question in a text field
-        st.text_area('Answer Generated:', final_ans, height=600)
+        st.text_area('Questions Generated:', final_ans, height=500)
 
 if __name__ == "__main__":
     main()
