@@ -1,9 +1,18 @@
 from openai import OpenAI
 import streamlit as st
 
+# Function to initialize session state variables
+def init_session_state():
+    if 'questions' not in st.session_state:
+        st.session_state.questions = []
+    if 'answers' not in st.session_state:
+        st.session_state.answers = []
+
 def main():
     st.title('A-level Quiz Bot')
     st.subheader("Enter a topic and I'll ask you questions!")
+
+    init_session_state()
     
     read_api_key= st.secrets["API_KEY_ST"]
     # Text input for the question
@@ -30,6 +39,9 @@ def main():
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
                 final_questions += chunk.choices[0].delta.content
+
+        # Update session state with new questions
+        st.session_state.questions = final_questions.split('\n')
         
         # Display the generated questions
         st.text_area('Questions Generated:', final_questions, height=300)
