@@ -39,7 +39,7 @@ def query_open_ai(prompt, get_answers=False):
             if chunk.choices[0].delta.content is not None:
                 answers_text = answers_text + str(chunk.choices[0].delta.content)
         return generated_text, answers_text
-    return generated_text
+    return generated_text, None
 
 def main():
     
@@ -91,9 +91,11 @@ def main():
         # Check answers
         if st.button('Check Answers'):
             st.subheader("Results:")
-            for i, answer in enumerate(st.session_state.student_answers):
-                st.write(f"Question {i+1}: Your answer: {answer}")
-                st.write(f"Correct answer: {correct_answers[i]}")
+            if st.session_state.correct_answers:
+                correct_answers = st.session_state.correct_answers.split('\n')
+                for i, answer in enumerate(st.session_state.student_answers):
+                    st.write(f"Question {i+1}: Your answer - {answer}")
+                    st.write(f"Correct answer - {correct_answers[i]}")
                 # Logic to compare answers coming soon
 
 if __name__ == "__main__":
