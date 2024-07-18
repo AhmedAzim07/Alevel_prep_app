@@ -23,6 +23,24 @@ def query_open_ai(prompt):
     for chunk in stream:
         if chunk.choices[0].delta.content is not None:
             generated_text= generated_text+ str( (chunk.choices[0].delta.content))
+    
+    if get_answers:
+        answer_prompt = f"""
+        You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
+        Questions:
+        {generated_text}
+        """
+        stream = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": answer_prompt}],
+            stream=True
+        )
+        answers = ""
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                answers = answers + str(chunk.choices[0].delta.content)
+        return generated_text, answers
+
     return generated_text
 
 def get_correct_answers(questions):
