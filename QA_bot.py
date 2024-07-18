@@ -11,35 +11,34 @@ read_api_key = st.secrets["API_KEY_ST"]
 #EXAMPLE USAGE:
 #  answer = query_open_ai(prompt)
 
-def query_open_ai(prompt):
+def query_open_ai(prompt, get_answers=False):
     client = OpenAI(api_key=read_api_key)
     stream = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[{"role": "user",     
-           "content": prompt
-          }],
-    stream=True,)
-    generated_text=""
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        stream=True
+    )
+    generated_text = ""
     for chunk in stream:
         if chunk.choices[0].delta.content is not None:
-            generated_text= generated_text+ str( (chunk.choices[0].delta.content))
+            generated_text = generated_text + str(chunk.choices[0].delta.content)
     
     if get_answers:
-        answer_prompt = f"""
+        prompt_answers = f"""
         You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
         Questions:
         {generated_text}
         """
-        stream = client.chat.completions.create(
+        stream_answers = client.chat.completions.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": answer_prompt}],
+            messages=[{"role": "user", "content": prompt_answers}],
             stream=True
         )
-        answers = ""
-        for chunk in stream:
+        answers_text = ""
+        for chunk in stream_answers:
             if chunk.choices[0].delta.content is not None:
-                answers = answers + str(chunk.choices[0].delta.content)
-        return generated_text, answers
+                answers_text = answers_text + str(chunk.choices[0].delta.content)
+        return generated_text, answers_text
     return generated_text
 
 def main():
@@ -51,7 +50,9 @@ def main():
         st.session_state.final_questions = ""
     if "student_answers" not in st.session_state:
         st.session_state.student_answers = []
-
+    if "correct_answers" not in st.session_state:
+        st.session_state.correct_answers = ""
+    
     # Text input for the question
     topic = st.text_input('Enter the topic:')
 
@@ -66,19 +67,14 @@ def main():
             """
          
         # Call the 'query_open_ai' function and save the generated answer in the final_questions variable    
-        final_questions= query_open_ai(prompt)
-        
-   
-        # Save questions in session state
+        final_questions, correct_answers = query_open_ai(prompt, get_answers=True)
         st.session_state.final_questions = final_questions
-
-        # Get correct answers
-        correct_answers = query_open_ai(final_questions)
         st.session_state.correct_answers = correct_answers
+
     
     if st.session_state.final_questions:
         # Display the generated questions
-        st.text_area('Questions Generated:', st.session_state.final_questions, height=300)
+        st.text_area('Questions Generated:', st.session_state.final_questions, height=200)
 
         # Allow students to answer questions
         st.subheader("Answer the questions:")
@@ -94,12 +90,11 @@ def main():
         
         # Check answers
         if st.button('Check Answers'):
-            # Your checking logic here (example: compare student_answers with expected answers)
-            st.subheader("Answer Checking Results:")
+            st.subheader("Results:")
             for i, answer in enumerate(st.session_state.student_answers):
-                st.write(f"Question {i+1}: Your answer - {answer}")
-                st.write(f"Correct answer - {correct_answers[i]}")
-                # Your logic to compare answers can go here
+                st.write(f"Question {i+1}: Your answer: {answer}")
+                st.write(f"Correct answer: {correct_answers[i]}")
+                # Logic to compare answers coming soon
 
 if __name__ == "__main__":
     main()
