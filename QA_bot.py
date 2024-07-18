@@ -6,8 +6,8 @@ import streamlit as st
 read_api_key = st.secrets["API_KEY_ST"]
 
 
-# Created a fucntion to get answers from open_ai so you dont have the write code again and again to get answers from OpenAI.
-#You can simply call the funciton query_open_ai and it will return the answer 
+# Created a function to get answers from open_ai so you don't have to write code repeatedly to get answers from OpenAI.
+#You can call the function query_open_ai and it will return the answer 
 #EXAMPLE USAGE:
 #  answer = query_open_ai(prompt)
 
@@ -25,8 +25,13 @@ def query_open_ai(prompt):
             generated_text= generated_text+ str( (chunk.choices[0].delta.content))
     return generated_text
 
-
-
+def get_correct_answers(questions):
+    prompt = f"""
+    You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
+    Questions:
+    {questions}
+    """
+    return query_open_ai(prompt)
 
 def main():
     
@@ -57,6 +62,10 @@ def main():
    
         # Save questions in session state
         st.session_state.final_questions = final_questions
+
+        # Get correct answers
+        correct_answers = get_correct_answers(final_questions)
+        st.session_state.correct_answers = correct_answers
     
     if st.session_state.final_questions:
         # Display the generated questions
@@ -80,6 +89,7 @@ def main():
             st.subheader("Answer Checking Results:")
             for i, answer in enumerate(st.session_state.student_answers):
                 st.write(f"Question {i+1}: Your answer - {answer}")
+                st.write(f"Correct answer - {correct_answers[i]}")
                 # Your logic to compare answers can go here
 
 if __name__ == "__main__":
