@@ -40,16 +40,7 @@ def query_open_ai(prompt):
             if chunk.choices[0].delta.content is not None:
                 answers = answers + str(chunk.choices[0].delta.content)
         return generated_text, answers
-
     return generated_text
-
-def get_correct_answers(questions):
-    prompt = f"""
-    You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
-    Questions:
-    {questions}
-    """
-    return query_open_ai(prompt)
 
 def main():
     
@@ -82,7 +73,7 @@ def main():
         st.session_state.final_questions = final_questions
 
         # Get correct answers
-        correct_answers = get_correct_answers(final_questions)
+        correct_answers = query_open_ai(final_questions)
         st.session_state.correct_answers = correct_answers
     
     if st.session_state.final_questions:
