@@ -14,7 +14,8 @@ read_api_key = st.secrets["API_KEY_ST"]
 def query_open_ai(prompt, get_answers=False):
     client = OpenAI(api_key=read_api_key)
     stream = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        #model="gpt-3.5-turbo",
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         stream=True
     )
@@ -62,8 +63,14 @@ def main():
                 You are an A-level professor. Students will give you a topic. Your job is to come up with A-level questions
                 that are based on this topic. The difficulty of these questions should be per the skill level of an average
                 A-level student. Ask 5 questions which MUST end with a question mark, this is very important.
-                Here is the topic: 
-                {topic}                       
+                
+                # Here is the topic: 
+                {topic}
+                
+                
+                # Example Output:
+                Q1) some question
+                Q2) another question                       
             """
          
         # Call the 'query_open_ai' function and save the generated answer in the final_questions variable    
