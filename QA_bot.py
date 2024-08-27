@@ -76,5 +76,5 @@ def main():
                         result = "Wrong"
                     st.write(f"Question {i+1}: Your answer - {user_answer} ({result})")
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
