@@ -26,11 +26,16 @@ def query_open_ai(prompt, get_answers=False):
     
     # Optionally generate answers based on the generated text
     if get_answers:
+        # Split questions for better structure
+        questions = generated_text.split("\n")
         prompt_answers = f"""
         You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner.
-        Questions:
-        {generated_text}
         """
+        for question in questions:
+            if question.strip():
+                prompt_answers += f"Question: {question}\n"
+        
+        # Request answers for each question
         stream_answers = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt_answers}],
@@ -42,7 +47,14 @@ def query_open_ai(prompt, get_answers=False):
         for chunk in stream_answers:
             if chunk.choices[0].delta.content is not None:
                 answers_text += str(chunk.choices[0].delta.content)
-        return generated_text, answers_text
+                
+        # Combine questions and answers properly
+        question_answer_pairs = zip(questions, answers_text.split("\n"))
+        combined_output = ""
+        for question, answer in question_answer_pairs:
+            combined_output += f"{question}\nCorrect answer: {answer.strip()}\n\n"
+        
+        return generated_text, combined_output
     
     return generated_text, None
 
@@ -102,14 +114,8 @@ def main():
         if st.button('Check Answers'):
             st.subheader("Results:")
             if st.session_state.correct_answers:
-                # Split correct answers into lines
-                correct_answers = st.session_state.correct_answers.split('\n')
-                
-                # Display student's answers and correct answers
-                for i, answer in enumerate(st.session_state.student_answers):
-                    st.write(f"Question {i+1}: Your answer - {answer}")
-                    st.write(f"Correct answer - {correct_answers[i]}")
-                # Additional logic for comparing answers can be added here
+                st.write(st.session_state.correct_answers)
+                # Logic to display question-answer comparison can be added here
 
 # Start the Streamlit app
 if __name__ == "__main__":
