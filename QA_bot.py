@@ -78,7 +78,7 @@ def compare_answers_with_ai(student_answer, correct_answer):
     """
     
     # Query OpenAI for evaluation
-    evaluation, _, _ = query_open_ai(prompt)  # Only take the first returned value, which is the result
+    evaluation, _ = query_open_ai(prompt)  # Only take the first returned value
     return evaluation
 
 # Main function for Streamlit app
