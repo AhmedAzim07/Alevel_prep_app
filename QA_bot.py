@@ -27,9 +27,9 @@ def query_open_ai(prompt, get_answers=False):
     # Optionally generate answers based on the generated text
     if get_answers:
         # Split questions for better structure
-        questions = [q for q in generated_text.split("\n") if q.strip()]  # Clean up empty lines
+        questions = [q for q in generated_text.split("\n") if q.strip()]
         
-        prompt_answers = "You are an A-level professor. Provide the correct answers for the following questions in a simple, clear manner:\n"
+        prompt_answers = "You are an A-level professor. Provide the correct answers for the following questions:\n"
         
         # Create a structured prompt for answers
         for question in questions:
@@ -54,13 +54,18 @@ def query_open_ai(prompt, get_answers=False):
 
         # Combine questions with their respective answers properly
         combined_output = ""
+        clean_answers = []
         for i, question in enumerate(questions):
-            combined_output += f"Q{i+1}) {question}\n"
-            combined_output += f"Correct answer: {answers[i] if i < len(answers) else 'Answer not available'}\n\n"
+            clean_question = question.split(') ', 1)[-1]  # Remove the 'Q#)' prefix if present
+            combined_output += f"Q{i+1}) {clean_question}\n"
+            correct_answer = answers[i] if i < len(answers) else 'Answer not available'
+            clean_correct_answer = correct_answer.split(') ', 1)[-1]  # Clean the 'A#)' if present
+            combined_output += f"Correct answer: {clean_correct_answer}\n\n"
+            clean_answers.append(clean_correct_answer)
         
-        return generated_text, combined_output
+        return generated_text, combined_output, clean_answers
     
-    return generated_text, None
+    return generated_text, None, None
 
 def compare_answers_with_ai(student_answer, correct_answer):
     prompt = f"""
@@ -78,7 +83,6 @@ def compare_answers_with_ai(student_answer, correct_answer):
     return result
 
 # Main function for Streamlit app
-
 def main():
     st.title('A-level Quiz Bot')
     st.subheader("Enter a topic and I'll ask you questions!")
@@ -89,7 +93,7 @@ def main():
     if "student_answers" not in st.session_state:
         st.session_state.student_answers = []
     if "correct_answers" not in st.session_state:
-        st.session_state.correct_answers = ""
+        st.session_state.correct_answers = []
     
     # Text input for the question topic
     topic = st.text_input('Enter the topic:')
@@ -110,9 +114,9 @@ def main():
         """
         
         # Call the 'query_open_ai' function and store the results in session state
-        final_questions, correct_answers = query_open_ai(prompt, get_answers=True)
+        final_questions, correct_answers_output, clean_correct_answers = query_open_ai(prompt, get_answers=True)
         st.session_state.final_questions = final_questions
-        st.session_state.correct_answers = correct_answers
+        st.session_state.correct_answers = clean_correct_answers
     
     if st.session_state.final_questions:
         # Display generated questions
@@ -134,13 +138,13 @@ def main():
         if st.button('Check Answers'):
             st.subheader("Results:")
             if st.session_state.correct_answers:
-                correct_answers = st.session_state.correct_answers.split('\n')
                 for i, answer in enumerate(st.session_state.student_answers):
+                    correct_answer = st.session_state.correct_answers[i] if i < len(st.session_state.correct_answers) else "Answer not available"
                     st.write(f"Question {i+1}: Your answer - {answer}")
-                    st.write(f"Correct answer - {correct_answers[i]}")
+                    st.write(f"Correct answer - {correct_answer}")
 
                     # Logic to compare answers using AI
-                    evaluation = compare_answers_with_ai(answer, correct_answers[i])
+                    evaluation = compare_answers_with_ai(answer, correct_answer)
                     st.write(f"Evaluation: {evaluation}")
 
 # Start the Streamlit app
