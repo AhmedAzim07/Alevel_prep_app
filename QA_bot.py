@@ -1,79 +1,57 @@
-import re
-import openai
+from openai import OpenAI
 import streamlit as st
 
+# API key
 read_api_key = st.secrets["API_KEY_ST"]
 
-# Updated function for OpenAI API (with newer version of openai library)
+# Function to query OpenAI using streaming
 def query_open_ai(prompt, get_answers=False):
-    openai.api_key = read_api_key
+    # Initialize OpenAI client
+    client = OpenAI(api_key=read_api_key)
     
-    # Create chat completion using the latest method
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # You can switch to another model if needed
-        messages=[
-            {"role": "system", "content": "You are a helpful A-level professor."},
-            {"role": "user", "content": prompt}
-        ]
+    # Create a streaming completion request to OpenAI
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",  # Use gpt-3.5-turbo if needed
+        messages=[{"role": "user", "content": prompt}],
+        stream=True  # Streaming mode on
     )
     
-    generated_text = response['choices'][0]['message']['content']
-
+    # Initialize empty string to accumulate generated text
+    generated_text = ""
+    
+    # Streaming and collecting content chunks
+    for chunk in stream:
+        if chunk.choices[0].delta.content is not None:
+            generated_text += str(chunk.choices[0].delta.content)
+    
+    # Optionally generate answers based on the generated text
     if get_answers:
         prompt_answers = f"""
-        You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
+        You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner.
         Questions:
         {generated_text}
         """
-        answer_response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # or another model
-            messages=[
-                {"role": "system", "content": "You are a helpful A-level professor."},
-                {"role": "user", "content": prompt_answers}
-            ]
+        stream_answers = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt_answers}],
+            stream=True
         )
         
-        answers_text = answer_response['choices'][0]['message']['content']
+        # Initialize empty string to accumulate the answers
+        answers_text = ""
+        for chunk in stream_answers:
+            if chunk.choices[0].delta.content is not None:
+                answers_text += str(chunk.choices[0].delta.content)
         return generated_text, answers_text
     
     return generated_text, None
-
-# Function to display results
-def display_results(student_answers, correct_answers):
-    st.subheader("Results:")
-    
-    # Use a regex to split answers based on patterns like A1), A2), etc.
-    correct_answers_list = re.split(r'(A\d\))', correct_answers)
-    
-    # Clean up and reformat the answers for proper alignment
-    cleaned_correct_answers = []
-    current_answer = ""
-    
-    for part in correct_answers_list:
-        if part.startswith("A"):
-            if current_answer:  # If there's already an accumulated answer, save it
-                cleaned_correct_answers.append(current_answer.strip())
-            current_answer = part  # Start a new answer part
-        else:
-            current_answer += part  # Continue accumulating the answer text
-    
-    # Append the last accumulated answer
-    if current_answer:
-        cleaned_correct_answers.append(current_answer.strip())
-    
-    # Display the results
-    for i, answer in enumerate(student_answers):
-        st.write(f"Question {i+1}: Your answer - {answer}")
-        if i < len(cleaned_correct_answers):
-            st.write(f"Correct answer - {cleaned_correct_answers[i]}")
-        else:
-            st.write("Correct answer not available.")
 
 # Main function for Streamlit app
 def main():
     st.title('A-level Quiz Bot')
     st.subheader("Enter a topic and I'll ask you questions!")
     
+    # Initialize session state to store questions, student answers, and correct answers
     if "final_questions" not in st.session_state:
         st.session_state.final_questions = ""
     if "student_answers" not in st.session_state:
@@ -81,38 +59,37 @@ def main():
     if "correct_answers" not in st.session_state:
         st.session_state.correct_answers = ""
     
-    # Text input for the question
+    # Text input for the question topic
     topic = st.text_input('Enter the topic:')
-
-    if st.button('Enter'): 
-        # CREATE A PROMPT HERE TO PASS TO THE 'query_open_ai' function
+    
+    if st.button('Enter'):
+        # Create prompt to generate questions
         prompt = f"""
-                You are an A-level professor. Students will give you a topic. Your job is to come up with A-level questions
-                that are based on this topic. The difficulty of these questions should be per the skill level of an average
-                A-level student. Ask 5 questions which MUST end with a question mark, this is very important.
-                
-                # Here is the topic: 
-                {topic}
-                
-                # Example Output:
-                Q1) some question
-                Q2) another question                       
-            """
-         
-        # Call the 'query_open_ai' function and save the generated answer in the final_questions variable    
+        You are an A-level professor. Students will give you a topic. Your job is to come up with A-level questions
+        that are based on this topic. The difficulty of these questions should be per the skill level of an average
+        A-level student. Ask 5 questions which MUST end with a question mark, this is very important.
+        
+        # Here is the topic: 
+        {topic}
+        
+        # Example Output:
+        Q1) some question
+        Q2) another question
+        """
+        
+        # Call the 'query_open_ai' function and store the results in session state
         final_questions, correct_answers = query_open_ai(prompt, get_answers=True)
         st.session_state.final_questions = final_questions
         st.session_state.correct_answers = correct_answers
-
     
     if st.session_state.final_questions:
-        # Display the generated questions
+        # Display generated questions
         st.text_area('Questions Generated:', st.session_state.final_questions, height=200)
-
+        
         # Allow students to answer questions
         st.subheader("Answer the questions:")
-        num_questions = st.session_state.final_questions.count('?')  # Count questions based on '?' in final_questions
-
+        num_questions = st.session_state.final_questions.count('?')  # Count questions based on '?'
+        
         # Create input fields for student answers
         for i in range(num_questions):
             answer = st.text_input(f'Answer for Question {i+1}:', key=f'answer_{i}')
@@ -121,9 +98,19 @@ def main():
             else:
                 st.session_state.student_answers[i] = answer
         
-        # Check answers
+        # Button to check answers
         if st.button('Check Answers'):
-            display_results(st.session_state.student_answers, st.session_state.correct_answers)
+            st.subheader("Results:")
+            if st.session_state.correct_answers:
+                # Split correct answers into lines
+                correct_answers = st.session_state.correct_answers.split('\n')
+                
+                # Display student's answers and correct answers
+                for i, answer in enumerate(st.session_state.student_answers):
+                    st.write(f"Question {i+1}: Your answer - {answer}")
+                    st.write(f"Correct answer - {correct_answers[i]}")
+                # Additional logic for comparing answers can be added here
 
+# Start the Streamlit app
 if __name__ == "__main__":
     main()
