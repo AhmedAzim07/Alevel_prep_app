@@ -27,7 +27,7 @@ def query_open_ai(prompt, get_answers=False):
     # Optionally generate answers based on the generated text
     if get_answers:
         # Split questions for better structure
-        questions = generated_text.split("\n")
+        questions = [q for q in generated_text.split("\n") if q.strip()]  # Clean up empty lines
         prompt_answers = f"""
         You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner.
         """
@@ -47,12 +47,15 @@ def query_open_ai(prompt, get_answers=False):
         for chunk in stream_answers:
             if chunk.choices[0].delta.content is not None:
                 answers_text += str(chunk.choices[0].delta.content)
-                
-        # Combine questions and answers properly
-        question_answer_pairs = zip(questions, answers_text.split("\n"))
+        
+        # Split answers by lines and ensure pairing
+        answers = [a for a in answers_text.split("\n") if a.strip()]
         combined_output = ""
-        for question, answer in question_answer_pairs:
-            combined_output += f"{question}\nCorrect answer: {answer.strip()}\n\n"
+        
+        # Combine questions with their respective answers properly
+        for i, question in enumerate(questions):
+            combined_output += f"Q{i+1}) {question}\n"
+            combined_output += f"Correct answer: {answers[i] if i < len(answers) else 'Answer not available'}\n\n"
         
         return generated_text, combined_output
     
