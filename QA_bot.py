@@ -27,9 +27,9 @@ def query_open_ai(prompt, get_answers=False):
     # Optionally generate answers based on the generated text
     if get_answers:
         # Split questions for better structure
-        questions = [q for q in generated_text.split("\n") if q.strip()]
+        questions = [q for q in generated_text.split("\n") if q.strip()]  # Clean up empty lines
         
-        prompt_answers = "You are an A-level professor. Provide the correct answers for the following questions:\n"
+        prompt_answers = "You are an A-level professor. Provide the correct answers for the following questions in a simple, clear manner:\n"
         
         # Create a structured prompt for answers
         for question in questions:
@@ -54,33 +54,32 @@ def query_open_ai(prompt, get_answers=False):
 
         # Combine questions with their respective answers properly
         combined_output = ""
-        clean_answers = []
+        clean_answers = []  # To store only correct answers
         for i, question in enumerate(questions):
-            clean_question = question.split(') ', 1)[-1]  # Remove the 'Q#)' prefix if present
-            combined_output += f"Q{i+1}) {clean_question}\n"
+            combined_output += f"Q{i+1}) {question}\n"
             correct_answer = answers[i] if i < len(answers) else 'Answer not available'
-            clean_correct_answer = correct_answer.split(') ', 1)[-1]  # Clean the 'A#)' if present
-            combined_output += f"Correct answer: {clean_correct_answer}\n\n"
-            clean_answers.append(clean_correct_answer)
+            combined_output += f"Correct answer: {correct_answer}\n\n"
+            clean_answers.append(correct_answer)
         
         return generated_text, combined_output, clean_answers
     
     return generated_text, None, None
 
+# Function to compare answers using OpenAI
 def compare_answers_with_ai(student_answer, correct_answer):
+    # Initialize prompt for comparison
     prompt = f"""
-    You are an A-level professor. Evaluate the following answers:
+    You are an A-level professor. Compare the following two answers and evaluate whether the student's answer is correct, partially correct, or incorrect. Provide a brief evaluation.
     
-    Student Answer: "{student_answer}"
+    Student's answer: {student_answer}
+    Correct answer: {correct_answer}
     
-    Correct Answer: "{correct_answer}"
-    
-    Based on the content and meaning, determine if the student's answer is correct or not. 
-    Respond with "Correct" or "Incorrect" and provide a brief explanation of your evaluation.
+    Provide a verdict: Correct, Partially Correct, or Incorrect. Follow it with a one-sentence explanation.
     """
     
-    result, _ = query_open_ai(prompt)
-    return result
+    # Query OpenAI for evaluation
+    evaluation, _ = query_open_ai(prompt)
+    return evaluation
 
 # Main function for Streamlit app
 def main():
@@ -107,10 +106,6 @@ def main():
         
         # Here is the topic: 
         {topic}
-        
-        # Example Output:
-        Q1) some question
-        Q2) another question
         """
         
         # Call the 'query_open_ai' function and store the results in session state
@@ -137,15 +132,16 @@ def main():
         # Button to check answers
         if st.button('Check Answers'):
             st.subheader("Results:")
-            if st.session_state.correct_answers:
-                for i, answer in enumerate(st.session_state.student_answers):
-                    correct_answer = st.session_state.correct_answers[i] if i < len(st.session_state.correct_answers) else "Answer not available"
-                    st.write(f"Question {i+1}: Your answer - {answer}")
-                    st.write(f"Correct answer - {correct_answer}")
-
-                    # Logic to compare answers using AI
-                    evaluation = compare_answers_with_ai(answer, correct_answer)
-                    st.write(f"Evaluation: {evaluation}")
+            for i in range(num_questions):
+                # Compare student's answer with correct answer using AI
+                student_answer = st.session_state.student_answers[i]
+                correct_answer = st.session_state.correct_answers[i]
+                evaluation = compare_answers_with_ai(student_answer, correct_answer)
+                
+                st.write(f"Question {i+1}:")
+                st.write(f"Your answer - {student_answer}")
+                st.write(f"Correct answer - {correct_answer}")
+                st.write(f"Evaluation: {evaluation}")
 
 # Start the Streamlit app
 if __name__ == "__main__":
