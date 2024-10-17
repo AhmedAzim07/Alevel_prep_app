@@ -62,7 +62,23 @@ def query_open_ai(prompt, get_answers=False):
     
     return generated_text, None
 
+def compare_answers_with_ai(student_answer, correct_answer):
+    prompt = f"""
+    You are an A-level professor. Evaluate the following answers:
+    
+    Student Answer: "{student_answer}"
+    
+    Correct Answer: "{correct_answer}"
+    
+    Based on the content and meaning, determine if the student's answer is correct or not. 
+    Respond with "Correct" or "Incorrect" and provide a brief explanation of your evaluation.
+    """
+    
+    result, _ = query_open_ai(prompt)
+    return result
+
 # Main function for Streamlit app
+
 def main():
     st.title('A-level Quiz Bot')
     st.subheader("Enter a topic and I'll ask you questions!")
@@ -118,7 +134,14 @@ def main():
         if st.button('Check Answers'):
             st.subheader("Results:")
             if st.session_state.correct_answers:
-                st.write(st.session_state.correct_answers)
+                correct_answers = st.session_state.correct_answers.split('\n')
+                for i, answer in enumerate(st.session_state.student_answers):
+                    st.write(f"Question {i+1}: Your answer - {answer}")
+                    st.write(f"Correct answer - {correct_answers[i]}")
+
+                    # Logic to compare answers using AI
+                    evaluation = compare_answers_with_ai(answer, correct_answers[i])
+                    st.write(f"Evaluation: {evaluation}")
 
 # Start the Streamlit app
 if __name__ == "__main__":
