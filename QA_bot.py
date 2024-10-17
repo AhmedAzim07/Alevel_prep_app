@@ -1,40 +1,41 @@
 import re
-from openai import OpenAI
+import openai
 import streamlit as st
 
 read_api_key = st.secrets["API_KEY_ST"]
 
-# Created a function to get answers from open_ai so you don't have to write code repeatedly to get answers from OpenAI.
-# You can call the function query_open_ai and it will return the answer 
+# Updated function for OpenAI API (with newer version of openai library)
 def query_open_ai(prompt, get_answers=False):
-    client = OpenAI(api_key=read_api_key)
-    stream = client.chat.completions.create(
-        #model="gpt-3.5-turbo",
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True
-    )
-    generated_text = ""
-    for chunk in stream:
-        if chunk.choices[0].delta.content is not None:
-            generated_text = generated_text + str(chunk.choices[0].delta.content)
+    openai.api_key = read_api_key
     
+    # Create chat completion using the latest method
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # You can switch to another model if needed
+        messages=[
+            {"role": "system", "content": "You are a helpful A-level professor."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    
+    generated_text = response['choices'][0]['message']['content']
+
     if get_answers:
         prompt_answers = f"""
         You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
         Questions:
         {generated_text}
         """
-        stream_answers = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt_answers}],
-            stream=True
+        answer_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # or another model
+            messages=[
+                {"role": "system", "content": "You are a helpful A-level professor."},
+                {"role": "user", "content": prompt_answers}
+            ]
         )
-        answers_text = ""
-        for chunk in stream_answers:
-            if chunk.choices[0].delta.content is not None:
-                answers_text = answers_text + str(chunk.choices[0].delta.content)
+        
+        answers_text = answer_response['choices'][0]['message']['content']
         return generated_text, answers_text
+    
     return generated_text, None
 
 # Function to display results
