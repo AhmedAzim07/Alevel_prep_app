@@ -1,52 +1,76 @@
-from openai import OpenAI
+import openai
 import streamlit as st
+import re
 
-
-
+# API Key initialization
 read_api_key = st.secrets["API_KEY_ST"]
 
-
-# Created a function to get answers from open_ai so you don't have to write code repeatedly to get answers from OpenAI.
-#You can call the function query_open_ai and it will return the answer 
-#EXAMPLE USAGE:
-#  answer = query_open_ai(prompt)
-
+# Created a function to get answers from OpenAI so you don't have to write code repeatedly to get answers from OpenAI.
+# You can call the function query_open_ai and it will return the answer
 def query_open_ai(prompt, get_answers=False):
-    client = OpenAI(api_key=read_api_key)
-    stream = client.chat.completions.create(
-        #model="gpt-3.5-turbo",
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        stream=True
+    openai.api_key = read_api_key
+    
+    # Generate questions
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",  # You can adjust the model as needed
+        messages=[{"role": "user", "content": prompt}]
     )
-    generated_text = ""
-    for chunk in stream:
-        if chunk.choices[0].delta.content is not None:
-            generated_text = generated_text + str(chunk.choices[0].delta.content)
+    generated_text = completion.choices[0].message['content']
     
     if get_answers:
         prompt_answers = f"""
-        You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner. 
+        You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner.
         Questions:
         {generated_text}
         """
-        stream_answers = client.chat.completions.create(
+        # Generate correct answers
+        completion_answers = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt_answers}],
-            stream=True
+            messages=[{"role": "user", "content": prompt_answers}]
         )
-        answers_text = ""
-        for chunk in stream_answers:
-            if chunk.choices[0].delta.content is not None:
-                answers_text = answers_text + str(chunk.choices[0].delta.content)
+        answers_text = completion_answers.choices[0].message['content']
         return generated_text, answers_text
+    
     return generated_text, None
 
+# Function to display the results
+def display_results(student_answers, correct_answers):
+    st.subheader("Results:")
+    
+    # Use regex to split answers based on patterns like A1), A2), etc.
+    correct_answers_list = re.split(r'(A\d\))', correct_answers)
+    
+    # Clean up and reformat the answers for proper alignment
+    cleaned_correct_answers = []
+    current_answer = ""
+    
+    for part in correct_answers_list:
+        if part.startswith("A"):
+            if current_answer:  # If there's already an accumulated answer, save it
+                cleaned_correct_answers.append(current_answer.strip())
+            current_answer = part  # Start a new answer part
+        else:
+            current_answer += part  # Continue accumulating the answer text
+    
+    # Append the last accumulated answer
+    if current_answer:
+        cleaned_correct_answers.append(current_answer.strip())
+    
+    # Display the results
+    for i, answer in enumerate(student_answers):
+        st.write(f"Question {i+1}: Your answer - {answer}")
+        if i < len(cleaned_correct_answers):
+            st.write(f"Correct answer - {cleaned_correct_answers[i]}")
+        else:
+            st.write("Correct answer not available.")
+
+# Main function for the Streamlit app
 def main():
     
     st.title('A-level Quiz Bot')
     st.subheader("Enter a topic and I'll ask you questions!")
     
+    # Initialize session state variables if not already present
     if "final_questions" not in st.session_state:
         st.session_state.final_questions = ""
     if "student_answers" not in st.session_state:
@@ -54,11 +78,11 @@ def main():
     if "correct_answers" not in st.session_state:
         st.session_state.correct_answers = ""
     
-    # Text input for the question
+    # Text input for the topic
     topic = st.text_input('Enter the topic:')
-
-    if st.button('Enter'): 
-        # CREATE A PROMPT HERE TO PASS TO THE 'query_open_ai' function
+    
+    if st.button('Enter'):
+        # Prompt for the OpenAI API
         prompt = f"""
                 You are an A-level professor. Students will give you a topic. Your job is to come up with A-level questions
                 that are based on this topic. The difficulty of these questions should be per the skill level of an average
@@ -66,28 +90,26 @@ def main():
                 
                 # Here is the topic: 
                 {topic}
-                
-                
-                # Example Output:
-                Q1) some question
-                Q2) another question                       
             """
-         
-        # Call the 'query_open_ai' function and save the generated answer in the final_questions variable    
+        
+        # Call OpenAI API to generate questions and answers
         final_questions, correct_answers = query_open_ai(prompt, get_answers=True)
+        
+        # Save the generated questions and answers to session state
         st.session_state.final_questions = final_questions
         st.session_state.correct_answers = correct_answers
 
-    
     if st.session_state.final_questions:
         # Display the generated questions
         st.text_area('Questions Generated:', st.session_state.final_questions, height=200)
 
         # Allow students to answer questions
         st.subheader("Answer the questions:")
-        num_questions = st.session_state.final_questions.count('?')  # Count questions based on '?' in final_questions
+        
+        # Count the number of questions by the number of question marks
+        num_questions = st.session_state.final_questions.count('?')
 
-        # Create input fields for student answers
+        # Input fields for student answers
         for i in range(num_questions):
             answer = st.text_input(f'Answer for Question {i+1}:', key=f'answer_{i}')
             if len(st.session_state.student_answers) < num_questions:
@@ -97,13 +119,8 @@ def main():
         
         # Check answers
         if st.button('Check Answers'):
-            st.subheader("Results:")
-            if st.session_state.correct_answers:
-                correct_answers = st.session_state.correct_answers.split('\n')
-                for i, answer in enumerate(st.session_state.student_answers):
-                    st.write(f"Question {i+1}: Your answer - {answer}")
-                    st.write(f"Correct answer - {correct_answers[i]}")
-                # Logic to compare answers coming soon
+            display_results(st.session_state.student_answers, st.session_state.correct_answers)
 
+# Run the main function
 if __name__ == "__main__":
     main()
