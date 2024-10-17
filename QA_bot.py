@@ -28,12 +28,13 @@ def query_open_ai(prompt, get_answers=False):
     if get_answers:
         # Split questions for better structure
         questions = [q for q in generated_text.split("\n") if q.strip()]  # Clean up empty lines
-        prompt_answers = f"""
-        You are an A-level professor. Here are some questions for an A-level student. Provide the correct answers for each question in a simple, clear manner.
-        """
+        
+        prompt_answers = "You are an A-level professor. Provide the correct answers for the following questions in a simple, clear manner:\n"
+        
+        # Create a structured prompt for answers
         for question in questions:
             if question.strip():
-                prompt_answers += f"Question: {question}\n"
+                prompt_answers += f"{question}\n"
         
         # Request answers for each question
         stream_answers = client.chat.completions.create(
@@ -50,9 +51,9 @@ def query_open_ai(prompt, get_answers=False):
         
         # Split answers by lines and ensure pairing
         answers = [a for a in answers_text.split("\n") if a.strip()]
-        combined_output = ""
-        
+
         # Combine questions with their respective answers properly
+        combined_output = ""
         for i, question in enumerate(questions):
             combined_output += f"Q{i+1}) {question}\n"
             combined_output += f"Correct answer: {answers[i] if i < len(answers) else 'Answer not available'}\n\n"
@@ -118,7 +119,6 @@ def main():
             st.subheader("Results:")
             if st.session_state.correct_answers:
                 st.write(st.session_state.correct_answers)
-                # Logic to display question-answer comparison can be added here
 
 # Start the Streamlit app
 if __name__ == "__main__":
