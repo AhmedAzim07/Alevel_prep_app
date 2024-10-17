@@ -105,5 +105,5 @@ def main():
                     st.write(f"Correct answer - {correct_answers[i]}")
                 # Logic to compare answers coming soon
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
