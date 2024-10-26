@@ -133,10 +133,15 @@ def main():
         if st.button('Check Answers'):
             st.subheader("Results:")
             for i in range(num_questions):
-                # Compare student's answer with correct answer using AI
+                # Get student's answer and correct answer using AI
                 student_answer = st.session_state.student_answers[i]
                 correct_answer = st.session_state.correct_answers[i]
-                evaluation = compare_answers_with_ai(student_answer, correct_answer)
+                 # Check if the student's answer is blank
+                if not student_answer.strip():  # Empty or just whitespace
+                    evaluation = "Incorrect - No answer provided"
+                else:
+            # Compare student's answer with correct answer using AI
+                    evaluation = compare_answers_with_ai(student_answer, correct_answer)
                 
                 st.write(f"Question {i+1}:")
                 st.write(f"Your answer - {student_answer}")
