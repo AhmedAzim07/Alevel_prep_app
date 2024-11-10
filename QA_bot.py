@@ -102,7 +102,7 @@ def main():
         prompt = f"""
         You are an A-level professor. Students will give you a topic. Your job is to come up with A-level questions
         that are based on this topic. The difficulty of these questions should be per the skill level of an average
-        A-level student. Ask 5 questions which MUST end with a question mark, this is very important.
+        A-level student and the questions should not be very complex. Ask 5 questions which MUST end with a question mark, this is very important.
         
         # Here is the topic: 
         {topic}
