@@ -1,1 +1,2 @@
-openai
+google-genai>=1.0.0
+streamlit>=1.38.0
