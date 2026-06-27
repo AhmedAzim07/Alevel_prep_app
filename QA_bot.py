@@ -8,7 +8,7 @@ import re
 # ──────────────────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="A-Level StudyBot",
-    page_icon="🎓",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -306,7 +306,13 @@ CSS = """
 }
 
 /* ── Hide Streamlit chrome ── */
-header[data-testid="stHeader"]           { display: none !important; }
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+[data-testid="collapsedControl"] {
+    display: block !important;
+}
 footer                                   { display: none !important; }
 #MainMenu                                { display: none !important; }
 
@@ -356,11 +362,18 @@ h1,h2,h3,h4 { font-family: 'Manrope', sans-serif !important; color: var(--text) 
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 1.5rem;
-    height: 100%;
-    transition: border-color 0.2s;
+    padding: 1.75rem;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    transition: all .2s ease;
 }
-.feature-card:hover { border-color: var(--accent); }
+
+.feature-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
 
 /* ── Question text ── */
 .q-meta {
@@ -587,7 +600,7 @@ details { border-radius: var(--radius-sm) !important; }
 # ──────────────────────────────────────────────────────────────────────────────
 def render_sidebar() -> None:
     with st.sidebar:
-        st.markdown('<div class="logo-text">🎓 StudyBot</div>', unsafe_allow_html=True)
+        st.markdown('<div class="logo-text">StudyBot</div>', unsafe_allow_html=True)
         st.markdown('<div class="logo-sub">A-Level Exam Prep · AI-Powered</div>', unsafe_allow_html=True)
         st.divider()
 
