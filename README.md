@@ -153,8 +153,4 @@ For larger changes (auth, persistence, new architecture), open an issue first to
 
 ---
 
-## License
-
-MIT. Use it, fork it, build on it.
-
 If this helped you revise, a star on the repo is appreciated.
